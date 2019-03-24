@@ -44,8 +44,28 @@ module.exports = function(app, swig, gestorBD) {
             if (id == null) {
                 res.send("Error al insertar canción");
             } else {
-                res.send("Agregada la canción ID: " + id);
+                res.send("Agregada id: " + id);
+                if (req.files.portada != null) {
+                    var imagen = req.files.portada;
+                    imagen.mv('public/portadas/' + id + '.png', function(err) {
+                        if (err) {
+                            res.send("Error al subir la portada");
+                        } else {
+                            if (req.files.audio != null) {
+                                var audio = req.files.audio;
+                                audio.mv('public/audios/'+id+'.mp3', function(err) {
+                                    if (err) {
+                                        res.send("Error al subir el audio");
+                                    } else {
+                                        res.send("Agregada id: "+ id);
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
             }
+
         });
 
     });
@@ -56,5 +76,21 @@ module.exports = function(app, swig, gestorBD) {
         });
         res.send(respuesta);
     })
+
+    app.get("/tienda", function(req, res) {
+        var criterio = {};
+        gestorBD.obtenerCanciones(criterio, function(canciones) {
+            if( req.query.busqueda != null ){
+                criterio = { "nombre" : {$regex : ".*"+req.query.busqueda+".*"} };
+            } else {
+                var respuesta = swig.renderFile('views/btienda.html',
+                    {
+                        canciones : canciones
+                    });
+                res.send(respuesta);
+            }
+        });
+    });
+
 
 };
