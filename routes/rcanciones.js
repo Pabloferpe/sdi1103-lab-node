@@ -103,5 +103,20 @@ module.exports = function(app, swig, gestorBD) {
         });
     })
 
+    app.get('/cancion/comprar/:id', function (req, res) {
+        var cancionId = gestorBD.mongo.ObjectID(req.params.id);
+        var compra = {
+            usuario : req.session.usuario,
+            cancionId : cancionId
+        }
+        gestorBD.insertarCompra(compra ,function(idCompra){
+            if ( idCompra == null ){
+                res.send(respuesta);
+            } else {
+                res.redirect("/compras");
+            }
+        });
+    });
+
 
 };
