@@ -77,49 +77,15 @@ module.exports = function(app, swig, gestorBD) {
         res.send(respuesta);
     })
 
-    app.get("/tienda", function(req, res) {
-        var criterio = {};
-        gestorBD.obtenerCanciones(criterio, function(canciones) {
-            if( req.query.busqueda != null ){
-                criterio = { "nombre" : {$regex : ".*"+req.query.busqueda+".*"} };
-            }
-            var pg = parseInt(req.query.pg); // Es String !!!
-            if ( req.query.pg == null){ // Puede no venir el param
-                pg = 1;
-            }
-
-            gestorBD.obtenerCancionesPg(criterio, pg , function(canciones, total ) {
-                if (canciones == null) {
-                    res.send("Error al listar ");
-                } else {
-                    var ultimaPg = total/4;
-                    if (total % 4 > 0 ){ // Sobran decimales
-                        ultimaPg = ultimaPg+1;
-                    }
-                    var paginas = []; // paginas mostrar
-                    for(var i = pg-2 ; i <= pg+2 ; i++){
-                        if ( i > 0 && i <= ultimaPg){
-                            paginas.push(i);
-                        }
-                    }
-                    var respuesta = swig.renderFile('views/btienda.html',
-                        {
-                            canciones : canciones,
-                            paginas : paginas,
-                            actual : pg
-                        });
-                    res.send(respuesta);
-                }
-            });
-
-        });
-    });
 
     app.get('/cancion/eliminar/:id', function (req, res) {
         var criterio = {"_id" : gestorBD.mongo.ObjectID(req.params.id) };
         gestorBD.eliminarCancion(criterio,function(canciones){
             if ( canciones == null ){
-                res.send(respuesta);
+                res.redirect("/cancion/eliminar" +
+                    "?mensaje=No hay ninguna canción para eliminar"+
+                    "&tipoMensaje=alert-danger ");
+
             } else {
                 res.redirect("/publicaciones");
             }
@@ -141,5 +107,58 @@ module.exports = function(app, swig, gestorBD) {
         });
     });
 
+    app.get('/cancion/modificar/:id', function (req, res) {
+        var criterio = { "_id" : gestorBD.mongo.ObjectID(req.params.id) };
+        gestorBD.obtenerCanciones(criterio,function(canciones){
+            if ( canciones == null ){
+                res.redirect("/cancion/modificar" +
+                    "?mensaje=No existe la canción que se quiere modificar"+
+                    "&tipoMensaje=alert-danger ");
+            } else {
+                var respuesta = swig.renderFile('views/bcancionModificar.html',
+                    {
+                        cancion : canciones[0]
+                    });
+                res.send(respuesta);
+            }
+        });
+    })
 
+    app.get("/tienda", function (req, res) {
+        var criterio = {};
+        gestorBD.obtenerCanciones(criterio, function (canciones) {
+            if (req.query.busqueda != null) {
+                criterio = {"nombre": {$regex: ".*" + req.query.busqueda + ".*"}};
+            }
+            var pg = parseInt(req.query.pg); // Es String !!!
+            if (req.query.pg == null) { // Puede no venir el param
+                pg = 1;
+            }
+
+            gestorBD.obtenerCancionesPg(criterio, pg, function (canciones, total) {
+                if (canciones == null) {
+                    res.send("Error al listar ");
+                } else {
+                    var ultimaPg = total / 4;
+                    if (total % 4 > 0) { // Sobran decimales
+                        ultimaPg = ultimaPg + 1;
+                    }
+                    var paginas = []; // paginas mostrar
+                    for (var i = pg - 2; i <= pg + 2; i++) {
+                        if (i > 0 && i <= ultimaPg) {
+                            paginas.push(i);
+                        }
+                    }
+                    var respuesta = swig.renderFile('views/btienda.html',
+                        {
+                            canciones: canciones,
+                            paginas: paginas,
+                            actual: pg
+                        });
+                    res.send(respuesta);
+                }
+            });
+
+        });
+    });
 };
